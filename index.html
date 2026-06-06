@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- 1. ethers.js — connects your page to the blockchain -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js" defer></script>
+<!-- QR code generator (defines the global QRCode used by app.js) -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js" defer></script>
+<!-- 2. Your contract ABI -->
+<script src="abi.js" defer></script>
+
+<!-- 3. Your app logic — must come LAST -->
+<script src="app.js" defer></script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CafeChain</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="https://fonts.gstatic.com/s/i/short-term/release/googlesymbols/coffee/default/24px.svg">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --orange:#D4870A;--yellow:#FFC107;--red:#C1440E;--bg:#F5EFE6;
+  --navy:#1B2A4A;--navy2:#243358;
+  --text:#1A1A2E;--muted:#8A8A9A;--success:#27AE60;
+  --nav-h:72px;
+  --p:20px;
+  --r:16px;
+  --sh:0 4px 20px rgba(0,0,0,0.08);
+}
+html,body{height:100%;margin:0}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);display:flex;justify-content:center;min-height:100vh}
+.phone{width:100%;min-height:100vh;background:var(--bg);display:flex;flex-direction:column;position:relative;max-width:1400px;margin:0 auto}
+
+/* ── SCREENS ── */
+.scr{display:none;flex-direction:column;flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(var(--nav-h)+16px);-webkit-overflow-scrolling:touch}
+.scr.on{display:flex;animation:fu .22s ease}
+@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+#s-login{padding-bottom:0;background:linear-gradient(160deg,#1A1A2E,#2a1a3e 50%,#3a1a1a)}
+#s-tx{padding-bottom:16px;align-items:center;justify-content:flex-start}
+#s-detail{padding-bottom:calc(var(--nav-h)+68px)}
+
+/* ── LOGIN ── */
+.login-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(18px,4vw,40px) var(--p)}
+.login-logo{font-family:'Fredoka One',cursive;font-size:clamp(28px,5vw,48px);color:#fff;text-align:center;margin-bottom:2px}
+.login-logo span{color:var(--orange)}
+.login-tag{font-size:11px;color:rgba(255,255,255,.5);font-weight:700;letter-spacing:2px;text-align:center;margin-bottom:32px}
+.lcard{background:#fff;border-radius:24px;padding:28px 24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.ltabs{display:flex;background:#f5f5f5;border-radius:12px;padding:3px;margin-bottom:18px}
+.ltab{flex:1;padding:9px;border:none;background:transparent;border-radius:9px;font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;color:var(--muted);cursor:pointer;transition:all .2s}
+.ltab.on{background:#fff;color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.lf{margin-bottom:14px}
+.ll{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:5px}
+.li{width:100%;padding:12px 14px;border-radius:11px;border:2px solid #f0f0f0;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;outline:none;transition:border-color .2s;background:#fafafa;color:var(--text)}
+.li:focus{border-color:var(--orange);background:#fff}
+.lbtn{width:100%;padding:14px;background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border:none;border-radius:13px;font-family:'Fredoka One',cursive;font-size:18px;cursor:pointer;margin-top:6px}
+.lbtn:hover{opacity:0.9;transform:translateY(-1px);transition:all .15s}
+.lerr{text-align:center;color:var(--red);font-size:12px;font-weight:800;min-height:18px;margin-top:8px}
+.ldemo{text-align:center;font-size:11px;color:var(--muted);font-weight:700;margin-top:10px;line-height:1.7}
+.ldemo strong{color:var(--text)}
+
+/* ── HOME TOP BAR ── */
+.top-bar{
+  padding:20px 24px 16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-shrink:0;
+  background:var(--bg);
+}
+.top-greeting{font-size:clamp(18px,2.5vw,26px);font-weight:900;color:var(--text)}
+.top-right{display:flex;align-items:center;gap:8px}
+.wallet-pill{
+  display:flex;align-items:center;gap:6px;
+  background:transparent;border:1.5px solid #ccc;
+  border-radius:999px;padding:6px 14px;
+  font-size:12px;font-weight:700;color:var(--text);
+  cursor:pointer;white-space:nowrap;
+}
+.wallet-pill svg{width:14px;height:14px;opacity:0.6}
+.eth-pill{
+  display:flex;align-items:center;gap:5px;
+  background:transparent;border:1.5px solid #ccc;
+  border-radius:999px;padding:6px 14px;
+  font-size:12px;font-weight:800;color:var(--text);
+  white-space:nowrap;
+}
+.eth-icon{width:16px;height:16px}
+.cart-btn{
+  display:flex;align-items:center;gap:4px;
+  background:transparent;border:1.5px solid #ccc;
+  border-radius:12px;padding:7px 14px;
+  font-size:13px;font-weight:800;color:var(--text);cursor:pointer;
+}
+
+/* ── HERO CAROUSEL ── */
+.hero-section{padding:0 16px 0;flex-shrink:0}
+.hero-carousel{position:relative;display:flex;gap:12px;overflow:hidden;border-radius:18px}
+.hero-slide{
+  flex:0 0 calc(60% - 6px);min-width:0;
+  border-radius:18px;overflow:hidden;position:relative;
+  height:clamp(160px,22vw,260px);cursor:pointer;
+  transition:transform .15s;
+}
+.hero-slide:nth-child(2){flex:0 0 calc(40% - 6px)}
+.hero-slide img{width:100%;height:100%;object-fit:cover;display:block}
+.hero-slide-ov{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:18px 20px 16px;
+}
+.slide-navy{background:linear-gradient(to right, rgba(27,42,74,0.88) 45%, rgba(27,42,74,0.3) 100%)}
+.slide-brown{background:linear-gradient(to right, rgba(120,60,10,0.88) 45%, rgba(120,60,10,0.3) 100%)}
+.slide-tag{font-size:10px;font-weight:800;color:rgba(255,255,255,.75);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;display:flex;align-items:center;gap:4px}
+.slide-tag::before{content:'★';color:var(--yellow)}
+.slide-name{font-family:'Fredoka One',cursive;font-size:clamp(16px,2.8vw,28px);color:#fff;line-height:1.1;margin-bottom:8px}
+.slide-price{font-family:'Fredoka One',cursive;font-size:clamp(13px,1.8vw,18px);color:var(--yellow)}
+.hero-arrows{display:flex;justify-content:space-between;position:absolute;top:50%;left:6px;right:6px;transform:translateY(-50%);pointer-events:none;z-index:10}
+.harrow{width:34px;height:34px;background:#fff;border-radius:50%;border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,.15);pointer-events:all;color:var(--text);font-weight:700}
+.harrow:hover{background:#f5f5f5;transform:scale(1.05);transition:all .15s}
+.hero-dots{display:flex;justify-content:center;gap:7px;padding:12px 0 4px}
+.hdot{width:18px;height:5px;border-radius:3px;background:#ccc;transition:all .2s;cursor:pointer}
+.hdot.on{background:var(--navy);width:28px}
+
+/* ── MENU SECTION ── */
+.menu-section{padding:16px 0 0;flex-shrink:0}
+.menu-header{display:flex;justify-content:space-between;align-items:center;padding:0 24px 14px}
+.menu-title{font-family:'Fredoka One',cursive;font-size:clamp(18px,2.5vw,26px);color:var(--text)}
+.see-all-btn{
+  background:transparent;border:1.5px solid #ccc;
+  border-radius:10px;padding:6px 16px;
+  font-size:12px;font-weight:800;color:var(--text);cursor:pointer;
+}
+.see-all-btn:hover{border-color:var(--navy);color:var(--navy);transition:all .15s}
+
+/* Horizontal scrolling menu cards */
+.menu-scroll{
+  display:flex;gap:12px;
+  padding:0 24px 16px;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.menu-scroll::-webkit-scrollbar{display:none}
+.mcard2{
+  flex:0 0 200px;
+  background:#fff;
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:var(--sh);
+  cursor:pointer;
+  transition:transform .15s;
+  position:relative;
+}
+.mcard2:hover{transform:translateY(-3px)}
+.mcard2:active{transform:scale(.97)}
+.mcard2-img{width:100%;height:110px;object-fit:cover;display:block}
+.mcard2-body{padding:10px 12px 12px}
+.mcard2-icon{
+  width:40px;height:40px;border-radius:12px;background:#FFF3E0;
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  margin-bottom:8px;border:1px solid #FFE0B2;
+}
+.mcard2-name{font-weight:900;font-size:13px;color:var(--text);line-height:1.3;margin-bottom:3px}
+.mcard2-desc{font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;line-height:1.4}
+.mcard2-price{font-weight:900;font-size:13px;color:var(--text)}
+
+/* ── DETAIL ── */
+.dhero{position:relative;height:clamp(190px,28vw,320px);background:#eee;flex-shrink:0}
+.dhero img{width:100%;height:100%;object-fit:cover;display:block}
+.dhero-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55),transparent 55%)}
+.back{position:absolute;top:14px;left:14px;z-index:10;width:36px;height:36px;background:rgba(255,255,255,.92);border-radius:10px;border:none;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center}
+.back:hover{background:#fff;transform:scale(1.05);transition:all .15s}
+.dbody{padding:var(--p) var(--p) 0}
+.dname{font-family:'Fredoka One',cursive;font-size:clamp(20px,3vw,34px)}
+.ddesc{color:var(--muted);font-size:14px;margin-top:6px;line-height:1.6;font-weight:600}
+.dprice{font-family:'Fredoka One',cursive;font-size:clamp(18px,2.5vw,28px);color:var(--orange);margin-top:14px}
+.qty-row{display:flex;align-items:center;gap:14px;margin-top:14px}
+.qbtn{width:40px;height:40px;border-radius:11px;border:none;cursor:pointer;font-size:20px;font-weight:900;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.qminus{background:#f0f0f0;color:var(--text)}.qplus{background:var(--navy);color:#fff;box-shadow:0 4px 12px rgba(27,42,74,.35)}
+.qbtn:hover{transform:scale(1.08)}
+.qnum{font-family:'Fredoka One',cursive;font-size:26px;min-width:28px;text-align:center}
+.ibox{background:#fff;border-radius:16px;padding:12px 16px;margin-top:16px;box-shadow:0 4px 20px rgba(0,0,0,.06)}
+.irow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f0f0f0;font-size:14px}
+.irow:last-child{border:none}
+.ilbl{color:var(--muted);font-weight:700}.ival{font-weight:800}
+.buybtn{
+  position:fixed;bottom:calc(var(--nav-h)+16px);left:24px;right:24px;
+  background:linear-gradient(135deg,var(--navy),var(--navy2));
+  color:#fff;border:none;border-radius:16px;padding:16px;
+  font-family:'Fredoka One',cursive;font-size:18px;cursor:pointer;
+  box-shadow:0 8px 24px rgba(27,42,74,.4);
+  display:flex;align-items:center;justify-content:center;gap:8px;z-index:40;
+}
+.buybtn:hover{transform:translateY(-2px);transition:transform .15s}
+
+/* ── TX ── */
+.txwrap{padding:clamp(14px,2.5vw,32px);width:100%;max-width:560px;margin:0 auto}
+.txcard{background:#fff;border-radius:24px;padding:clamp(16px,2.5vw,30px) clamp(14px,2vw,26px);box-shadow:0 8px 40px rgba(0,0,0,.08)}
+.txtitle{font-family:'Fredoka One',cursive;font-size:clamp(17px,2.2vw,26px);text-align:center;margin-bottom:18px}
+.txstep{display:flex;align-items:center;gap:13px;padding:12px 0;border-bottom:1px solid #f5f5f5}
+.txstep:last-of-type{border:none}
+.txi{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex-shrink:0;background:#f5f5f5;color:var(--muted);transition:all .3s}
+.txi.ld{background:#FFF3E0;color:var(--orange)}.txi.ok{background:#E8F5E9;color:var(--success)}
+.txlbl{font-size:14px;font-weight:800}
+.txsub{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px;font-family:monospace}
+.spin{width:15px;height:15px;border:2px solid #ccc;border-top-color:var(--navy);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.tktout{margin-top:16px}
+.tkt{background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:20px;padding:20px;color:#fff;position:relative;overflow:hidden}
+.tkt::before{content:'';position:absolute;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.06);top:-26px;right:-26px}
+.tkttop{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.tktbrand{font-family:'Fredoka One',cursive;font-size:17px;opacity:.9}
+.tktid{background:rgba(255,255,255,.2);padding:2px 9px;border-radius:999px;font-size:11px;font-weight:800}
+.vpill{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);padding:2px 9px;border-radius:999px;font-size:11px;font-weight:800;margin-bottom:7px}
+.tktmeal{font-family:'Fredoka One',cursive;font-size:clamp(16px,2.5vw,26px)}
+.tktqty{font-size:13px;opacity:.8;font-weight:700;margin-bottom:13px}
+.qrwrap{background:#fff;border-radius:12px;padding:8px;display:flex;justify-content:center;margin-bottom:13px}
+.tkthash{display:flex;justify-content:space-between;font-size:10px;opacity:.7;font-family:monospace}
+.tktfoot{text-align:center;font-size:11px;opacity:.6;margin-top:8px;font-weight:700}
+.donebtn{width:100%;background:#fff;color:var(--navy);border:none;border-radius:12px;padding:12px;font-family:'Fredoka One',cursive;font-size:17px;cursor:pointer;margin-top:14px}
+.donebtn:hover{background:#f5f8ff;transition:background .15s}
+
+/* ── COMMON PAGE ── */
+.phdr{padding:20px var(--p) 14px;flex-shrink:0}
+.ptitle{font-family:'Fredoka One',cursive;font-size:clamp(20px,2.8vw,30px)}
+.psub{font-size:13px;color:var(--muted);font-weight:700;margin-top:3px}
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.eico{font-size:52px;margin-bottom:13px}
+.etitle{font-family:'Fredoka One',cursive;font-size:22px;color:var(--text);margin-bottom:6px}
+.esub{font-size:13px;font-weight:600}
+
+/* ── HISTORY ── */
+.hlist{padding:0 var(--p);display:flex;flex-direction:column;gap:10px}
+.hi{background:#fff;border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:13px;box-shadow:var(--sh);cursor:pointer;transition:transform .15s}
+.hi:hover{transform:translateY(-2px)}
+.hiemo{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.hiinfo{flex:1;min-width:0}
+.hiname{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hidate{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+.hihash{font-size:10px;color:var(--muted);font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hiright{text-align:right;flex-shrink:0}
+.hiprice{font-weight:900;font-size:13px;color:var(--orange)}
+.hibadge{font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;margin-top:3px;display:inline-block}
+.bv{background:#E8F5E9;color:#2E7D32}
+.bu{background:#EEEEEE;color:#616161}
+.be{background:#FFF3E0;color:#E65100}
+.br{background:#E3F2FD;color:#1565C0}
+.atabs{display:flex;gap:6px;margin-bottom:4px}
+.atab{flex:1;padding:7px 4px;border:none;border-radius:9px;background:#e8e8f0;color:var(--muted);font-weight:800;font-size:12px;cursor:pointer}
+.atab.on{background:var(--navy);color:#fff}
+.bv{background:#E8F5E9;color:var(--success)}.bu{background:#f0f0f0;color:var(--muted)}.be{background:#FFF3E0;color:#E65100}.br{background:#E3F2FD;color:#1565C0}
+
+/* ── QR WALLET ── */
+.qlist{padding:0 var(--p);display:flex;flex-direction:column;gap:14px}
+.qi{background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:20px;padding:20px;color:#fff;box-shadow:0 8px 24px rgba(27,42,74,.28)}
+.qi.used{background:linear-gradient(135deg,#9E9E9E,#757575);box-shadow:none}.qi.expired{background:linear-gradient(135deg,#E65100,#BF360C);box-shadow:none}.qi.refunded{background:linear-gradient(135deg,#1565C0,#0D47A1);box-shadow:none}
+.qitop{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.qiname{font-family:'Fredoka One',cursive;font-size:20px}
+.qipill{font-size:10px;font-weight:800;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3)}
+.qiqty{font-size:12px;opacity:.8;font-weight:700;margin-bottom:10px;text-align:center}
+.qiqr{background:#fff;border-radius:12px;padding:8px;display:flex;justify-content:center;margin-bottom:10px}
+.qimeta{font-size:10px;opacity:.7;font-family:monospace;text-align:center}
+.refundbtn{width:100%;margin-top:12px;padding:11px;border-radius:12px;border:1.5px solid rgba(255,255,255,.4);background:rgba(255,255,255,.15);color:#fff;font-family:'Fredoka One',cursive;font-size:15px;cursor:pointer;transition:background .15s}
+.refundbtn:hover{background:rgba(255,255,255,.28)}
+.refundbtn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── ADMIN ── */
+#s-admin{background:#f4f4f8}
+.admhdr{padding:20px var(--p);background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border-radius:0 0 22px 22px;margin-bottom:6px;flex-shrink:0}
+.admhdr-row{display:flex;justify-content:space-between;align-items:flex-start}
+.admtitle{font-family:'Fredoka One',cursive;font-size:28px;color:#fff}
+.admsub{font-size:12px;color:rgba(255,255,255,.5);font-weight:700;margin-top:2px}
+.logoutbtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:7px 15px;border-radius:10px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:800;cursor:pointer;flex-shrink:0;white-space:nowrap}
+.logoutbtn:hover{background:rgba(255,255,255,.2);transition:background .15s}
+.srow{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 var(--p) 14px;flex-shrink:0}
+.sbox{background:#fff;border-radius:16px;padding:14px;box-shadow:var(--sh)}
+.slbl{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+.sval{font-family:'Fredoka One',cursive;font-size:28px;color:var(--navy);margin-top:3px}
+.ssub{font-size:11px;color:var(--muted);font-weight:600}
+.asec{padding:0 var(--p) 14px}
+.asectitle{font-family:'Fredoka One',cursive;font-size:20px;margin-bottom:10px}
+.mmgmt{background:#fff;border-radius:16px;overflow:hidden;box-shadow:var(--sh)}
+.mrow{display:flex;align-items:center;gap:11px;padding:13px 16px;border-bottom:1px solid #f5f5f5}
+.mrow:last-child{border:none}
+.mico{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.minfo{flex:1;min-width:0}
+.mname{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mprice{font-size:12px;color:var(--orange);font-weight:700}
+.tog{width:44px;height:24px;border-radius:999px;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.tog::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;transition:left .2s}
+.tog.on{background:var(--success)}.tog.on::after{left:23px}
+.tog.off{background:#ddd}.tog.off::after{left:3px}
+.amform{background:#fff;border-radius:16px;padding:20px;box-shadow:var(--sh);margin:0 var(--p) 14px}
+.amtitle{font-family:'Fredoka One',cursive;font-size:20px;margin-bottom:14px}
+.fr{margin-bottom:10px}
+.fl{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px}
+.fi{width:100%;padding:11px 12px;border-radius:10px;border:2px solid #f0f0f0;font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;outline:none;transition:border-color .2s;background:#fafafa;color:var(--text)}
+.fi:focus{border-color:var(--navy);background:#fff}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.erow{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+.eopt{width:38px;height:38px;border-radius:9px;border:2px solid #f0f0f0;background:#fafafa;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.eopt.on{border-color:var(--navy);background:#eef2ff}
+.ambtn{width:100%;padding:12px;background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border:none;border-radius:12px;font-family:'Fredoka One',cursive;font-size:17px;cursor:pointer;margin-top:5px}
+.ambtn:hover{opacity:0.9;transform:translateY(-1px);transition:all .15s}
+.amok{text-align:center;color:var(--success);font-weight:800;font-size:13px;min-height:18px;margin-top:7px}
+
+/* ── BOTTOM NAV ── */
+.nav,.anav{
+  position:fixed;bottom:0;left:0;width:100%;
+  display:flex;align-items:stretch;height:var(--nav-h);
+  padding:0 8px env(safe-area-inset-bottom,8px);z-index:50;
+}
+.nav{background:var(--navy);border-top:1px solid rgba(255,255,255,.08);box-shadow:0 -4px 24px rgba(0,0,0,.2)}
+.anav{background:rgba(26,26,46,.97);border-top:1px solid #2a2a4a;display:none}
+.anav.on{display:flex}
+
+.nbtn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;cursor:pointer;padding:8px 4px;min-width:0;transition:all .15s;border-radius:12px;margin:6px 3px}
+.nbtn:hover{background:rgba(255,255,255,.08)}
+.nico{font-size:22px;line-height:1}
+.nlbl{font-size:10px;font-weight:700;color:rgba(255,255,255,.5);white-space:nowrap}
+.nbtn.on .nlbl{color:var(--yellow)}
+.nbtn.on .nico{transform:scale(1.1)}
+.anav .nlbl{color:rgba(255,255,255,.5)}
+.anav .nbtn.on .nlbl{color:var(--yellow)}
+
+/* ── FUNDS MODAL ── */
+.moverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:flex-end;justify-content:center}
+.moverlay.on{display:flex}
+.fmodal{background:#fff;border-radius:28px 28px 0 0;padding:28px 24px calc(28px + env(safe-area-inset-bottom,0px));width:100%;max-width:500px;margin:0 auto;animation:su .3s ease}
+@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.fico{font-size:48px;text-align:center;margin-bottom:9px}
+.ftitle{font-family:'Fredoka One',cursive;font-size:26px;text-align:center;color:var(--red);margin-bottom:6px}
+.fmsg{text-align:center;font-size:14px;color:var(--muted);font-weight:600;line-height:1.6;margin-bottom:16px}
+.fdrow{display:flex;justify-content:space-between;background:#f8f8f8;border-radius:12px;padding:13px 16px;margin-bottom:7px}
+.fdlbl{font-size:13px;color:var(--muted);font-weight:700}
+.fdval{font-size:13px;font-weight:900;font-family:monospace}
+.fdval.r{color:var(--red)}.fdval.g{color:var(--success)}
+.dsbtn{width:100%;padding:13px;background:#f5f5f5;color:var(--text);border:none;border-radius:12px;font-family:'Fredoka One',cursive;font-size:17px;cursor:pointer;margin-top:8px}
+.dsbtn:hover{background:#ebebeb;transition:background .15s}
+
+@media(min-width:900px){
+  .menu-scroll .mcard2{flex:0 0 220px}
+  .hero-slide{height:clamp(200px,20vw,300px)}
+  .srow{grid-template-columns:repeat(4,1fr)}
+}
+
+/* ── OVERSCROLL FIX ── */
+.scr {
+  padding-bottom: calc(var(--nav-h) + 48px);
+}
+
+.menu-scroll {
+  padding-bottom: 8px;
+  padding-right: 24px;
+}
+
+html, body {
+  overscroll-behavior: none;
+}
+
+.phone {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+#s-detail {
+  padding-bottom: calc(var(--nav-h) + 80px);
+}
+#s-detail {
+  padding-top: 0px;
+  scroll-padding-top: 24px;
+}
+
+.dhero {
+  margin-top: 8px;
+}
+
+.dbody {
+  padding-top: 24px;
+}
+.back {
+  z-index: 60;
+}
+</style>
+</head>
+<body>
+<div class="phone">
+
+
+  <!-- LOGIN -->
+  <div class="scr on" id="s-login">
+    <div class="login-wrap">
+      <div class="login-logo">Cafe<span>Chain</span> ⛓️</div>
+      <div class="login-tag">BLOCKCHAIN CAFETERIA TICKETING</div>
+      <div class="lcard">
+        <!-- Student -->
+        <div id="lf-user">
+          <div class="lf">
+            <label class="ll">Full Name</label>
+            <input class="li" id="lName" placeholder="e.g. Adaeze Okafor">
+          </div>
+          <button class="lbtn" onclick="userLogin()">🦊 Connect MetaMask →</button>
+          <div class="lerr" id="lerr-u"></div>
+          <div class="ldemo">You will be prompted to connect your MetaMask wallet</div>
+        </div>
+        <!-- Staff (hidden by default) -->
+        <div id="lf-admin" style="display:none">
+          <button class="lbtn" style="background:linear-gradient(135deg,#1A1A2E,#2a2a5a)" onclick="adminLogin()">🦊 Connect Staff Wallet →</button>
+          <div class="lerr" id="lerr-a"></div>
+          <div class="ldemo">Only the contract owner wallet can access the admin panel</div>
+          <div style="text-align:center;margin-top:12px">
+            <button onclick="showStaffForm(false)" style="background:none;border:none;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer">← Back to student login</button>
+          </div>
+        </div>
+        <!-- Subtle staff link -->
+        <div id="staff-link" style="text-align:center;margin-top:14px">
+          <button onclick="showStaffForm(true)" style="background:none;border:none;color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;opacity:.6;letter-spacing:.3px">Staff login →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div class="scr" id="s-home">
+    <div class="top-bar">
+  <div class="top-greeting">Hello, <span id="hName">Student</span> 👋</div>
+  
+  <div class="top-right">
+    <div class="wallet-pill" onclick="switchUserAccount()" title="Switch account">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8L2 7h20z"/></svg>
+      <span id="hWallet">0x…</span>
+      <span style="font-size:11px;opacity:0.5">⇄</span>
+    </div>
+    
+    <div class="eth-pill">
+      <span style="font-size:14px">⟠</span> 
+      <span id="hBal">0.000</span> ETH
+    </div>
+    
+    <button class="cart-btn">🛒 ▾</button>
+  </div>
+</div>
+    <!-- Hero Carousel -->
+    <div class="hero-section">
+      <div class="hero-carousel" id="heroCarousel">
+        <div class="hero-slide" onclick="navTo('home')">
+          <img src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800&q=80" alt="Jollof Rice">
+          <div class="hero-slide-ov slide-navy">
+            <div class="slide-tag">TODAY'S SPECIALS</div>
+            <div class="slide-name">Jollof Rice<br>& Chicken</div>
+            <div class="slide-price">0.0040 ETH</div>
+          </div>
+        </div>
+        <div class="hero-slide" onclick="navTo('home')">
+          <img src="https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80" alt="Pepper Soup">
+          <div class="hero-slide-ov slide-brown">
+            <div class="slide-tag">NEW</div>
+            <div class="slide-name">Pepper Soup<br>& Plantain</div>
+            <div class="slide-price">0.0035 ETH</div>
+          </div>
+        </div>
+      </div>
+      <!-- Arrows -->
+      <div class="hero-arrows">
+        <button class="harrow" onclick="heroSlide(-1)">‹</button>
+        <button class="harrow" onclick="heroSlide(1)">›</button>
+      </div>
+      <!-- Dots -->
+      <div class="hero-dots">
+        <div class="hdot on" onclick="heroGo(0)"></div>
+        <div class="hdot" onclick="heroGo(1)"></div>
+        <div class="hdot" onclick="heroGo(2)"></div>
+      </div>
+    </div>
+
+    <!-- Full Menu -->
+    <div class="menu-section">
+      <div class="menu-header">
+        <div class="menu-title">Full Menu</div>
+        <button class="see-all-btn">See all</button>
+      </div>
+      <div class="menu-scroll" id="mstack"></div>
+    </div>
+  </div>
+
+
+  <!-- DETAIL -->
+  <div class="scr" id="s-detail">
+    <div class="dhero"><img id="dimg" src="" alt=""><div class="dhero-ov"></div><button class="back" onclick="goTo('s-home')">←</button></div>
+    <div class="dbody">
+      <div class="dname" id="dname"></div>
+      <div class="ddesc" id="ddesc"></div>
+      <div class="dprice" id="dprice"></div>
+      <div class="qty-row">
+        <button class="qbtn qminus" onclick="chgQ(-1)">−</button>
+        <span class="qnum" id="qnum">1</span>
+        <button class="qbtn qplus" onclick="chgQ(1)">+</button>
+        <span style="font-size:clamp(10px,2.8vw,12px);color:var(--muted);font-weight:700" id="dstock"></span>
+      </div>
+      <div class="ibox">
+        <div class="irow"><span class="ilbl">Unit Price</span><span class="ival" id="iunit">—</span></div>
+        <div class="irow"><span class="ilbl">Gas Fee</span><span class="ival" style="color:var(--muted)">~0.0012 ETH</span></div>
+        <div class="irow"><span class="ilbl">Total</span><span class="ival" id="itotal" style="color:var(--orange)">—</span></div>
+      </div>
+    </div>
+    <button class="buybtn" onclick="buy()">⛓️ Buy · <span id="btntotal">—</span></button>
+  </div>
+
+  <!-- TX -->
+  <div class="scr" id="s-tx">
+    <div class="txwrap">
+    <div class="txcard">
+      <div class="txtitle">⛓️ Processing…</div>
+      <div class="txstep"><div class="txi" id="ti1">1</div><div><div class="txlbl">Signing Transaction</div><div class="txsub" id="ts1">Waiting…</div></div></div>
+      <div class="txstep"><div class="txi" id="ti2">2</div><div><div class="txlbl">Broadcasting to Network</div><div class="txsub" id="ts2">Pending…</div></div></div>
+      <div class="txstep"><div class="txi" id="ti3">3</div><div><div class="txlbl">Block Confirmation</div><div class="txsub" id="ts3">Pending…</div></div></div>
+      <div class="txstep"><div class="txi" id="ti4">4</div><div><div class="txlbl">Minting Ticket NFT</div><div class="txsub" id="ts4">Pending…</div></div></div>
+      <div class="tktout" id="tktout" style="display:none">
+        <div class="tkt">
+          <div class="tkttop"><div class="tktbrand">🏫 CafeChain</div><div class="tktid" id="tid">#TKT-0000</div></div>
+          <div class="vpill">✔ Blockchain Verified</div>
+          <div class="tktmeal" id="tmeal">—</div>
+          <div class="tktqty" id="tqty">—</div>
+          <div class="qrwrap"><canvas id="qrMain" width="110" height="110"></canvas></div>
+          <div class="tkthash"><span>Block #<span id="tblock">—</span></span><span id="thash">—</span></div>
+          <div class="tktfoot">Present at counter · Single use only</div>
+        </div>
+        <button class="donebtn" onclick="done()">✓ Save to QR Wallet</button>
+        <button class="donebtn" id="dlQrBtn" style="background:var(--navy);color:#fff;margin-top:10px">⬇ Download QR Image</button>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="scr" id="s-history">
+    <div class="phdr"><div class="ptitle">🧾 Purchase History</div><div class="psub" id="histsub">No purchases yet</div></div>
+    <div id="histcontent"><div class="empty"><div class="eico">🛒</div><div class="etitle">No tickets yet!</div><div class="esub">Buy your first meal to see history here</div></div></div>
+  </div>
+
+  <!-- QR WALLET -->
+  <div class="scr" id="s-qrw">
+    <div class="phdr"><div class="ptitle">📲 My QR Wallet</div><div class="psub" id="qrwsub">No active tickets</div></div>
+    <div id="qrwcontent"><div class="empty"><div class="eico">🎟️</div><div class="etitle">No tickets yet!</div><div class="esub">Your QR codes will appear here after purchase</div></div></div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="scr" id="s-admin">
+    <div class="admhdr">
+      <div class="admhdr-row">
+  <div>
+    <div class="admtitle">⚙️ Admin Panel</div>
+    <div class="admsub" id="adminWalletStatus">Wallet not connected</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="logoutbtn" onclick="adminOut()">Logout</button>
+  </div>
+</div>
+    </div>
+    <div class="srow">
+      <div class="sbox"><div class="slbl">Tickets Sold</div><div class="sval" id="as1">0</div><div class="ssub">All time</div></div>
+      <div class="sbox"><div class="slbl">Revenue</div><div class="sval" id="as2">0</div><div class="ssub">ETH collected</div></div>
+      <div class="sbox"><div class="slbl">Transactions</div><div class="sval" id="as3">0</div><div class="ssub">On-chain</div></div>
+      <div class="sbox"><div class="slbl">Active Meals</div><div class="sval" id="as4">6</div><div class="ssub">Available now</div></div>
+    </div>
+    <div class="amform">
+      <div class="amtitle">➕ Add New Meal</div>
+      <div class="fr"><label class="fl">Meal Name</label><input class="fi" id="fName" placeholder="e.g. Pepper Soup &amp; Rice" maxlength="40"></div>
+      <div class="fr"><label class="fl">Description</label><input class="fi" id="fDesc" placeholder="Short description" maxlength="80"></div>
+      <div class="fr2">
+        <div><label class="fl">Price (₦)</label><input class="fi" id="fPrice" type="number" step="1" min="1" placeholder="2000"></div>
+        <div><label class="fl">Stock</label><input class="fi" id="fStock" type="number" min="1" placeholder="30"></div>
+      </div>
+      <div class="fr"><label class="fl">Emoji Icon</label>
+        <div class="erow" id="erow">
+          <div class="eopt on" onclick="pickEmoji(this)">🍲</div>
+          <div class="eopt" onclick="pickEmoji(this)">🥩</div>
+          <div class="eopt" onclick="pickEmoji(this)">🍜</div>
+          <div class="eopt" onclick="pickEmoji(this)">🥗</div>
+          <div class="eopt" onclick="pickEmoji(this)">🍱</div>
+          <div class="eopt" onclick="pickEmoji(this)">🌮</div>
+          <div class="eopt" onclick="pickEmoji(this)">🍔</div>
+          <div class="eopt" onclick="pickEmoji(this)">🥘</div>
+        </div>
+      </div>
+      <button class="ambtn" onclick="addMeal()">⛓️ Add to Blockchain Menu</button>
+      <div class="amok" id="amok"></div>
+    </div>
+    <div class="asec"><div class="asectitle">📋 Meal Management</div><div class="mmgmt" id="adminList"></div></div>
+    <div class="asec" style="margin-top:4px">
+  <div class="asectitle">🎟️ Redeem Ticket</div>
+  <div style="padding:14px;background:#fff;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.05)">
+    <div class="fr">
+      <label class="fl">Ticket ID</label>
+      <input class="fi" id="redeemId" type="number" min="1" placeholder="Enter ticket number e.g. 3">
+    </div>
+    <button class="ambtn" onclick="redeemTicket()" style="margin-top:8px">✓ Mark as Used</button>
+
+    <!-- QR scanner: live camera + image upload -->
+    <div style="margin-top:14px;border-top:1px solid #eee;padding-top:12px">
+      <button class="ambtn" style="background:linear-gradient(135deg,#2e7d32,#1b5e20)" onclick="startScanner()">📷 Scan QR with Camera</button>
+      <div id="scanWrap" style="display:none;margin-top:10px">
+        <div id="qrReader" style="width:100%;max-width:320px;margin:0 auto"></div>
+        <button class="ambtn" style="background:#555;margin-top:8px" onclick="stopScanner()">✕ Stop Camera</button>
+      </div>
+      <label class="ambtn" style="background:#3949ab;margin-top:8px;display:block;text-align:center;cursor:pointer">
+        🖼️ Upload a QR image
+        <input type="file" accept="image/*" onchange="scanFromFile(this)" style="display:none">
+      </label>
+    </div>
+
+    <div id="redeemMsg" style="margin-top:10px;font-size:13px;font-weight:800;text-align:center;min-height:18px"></div>
+  </div>
+</div>
+    <div class="asec" style="margin-top:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="asectitle" style="margin-bottom:0">🧾 All Tickets</div>
+        <button onclick="loadAllTickets()" style="background:none;border:1.5px solid var(--navy);color:var(--navy);border-radius:10px;padding:5px 10px;font-weight:800;font-size:12px;cursor:pointer">🔄 Refresh</button>
+      </div>
+      <div id="adminTx" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+
+  <!-- CUSTOMER NAV -->
+  <nav class="nav" id="cnav" style="display:none">
+    <button class="nbtn on" id="n-home" onclick="navTo('home')"><span class="nico">🏠</span><span class="nlbl">Home</span></button>
+    <button class="nbtn" id="n-history" onclick="navTo('history')"><span class="nico">🧾</span><span class="nlbl">History</span></button>
+    <button class="nbtn" id="n-qrw" onclick="navTo('qrw')"><span class="nico">📲</span><span class="nlbl">QR Wallet</span></button>
+    <button class="nbtn" onclick="userOut()"><span class="nico">🚪</span><span class="nlbl">Logout</span></button>
+  </nav>
+
+  <!-- ADMIN NAV -->
+  <nav class="anav" id="anav">
+    <button class="nbtn on"><span class="nico">📊</span><span class="nlbl" style="color:var(--orange)">Dashboard</span></button>
+    <button class="nbtn" onclick="adminOut()"><span class="nico">🚪</span><span class="nlbl">Logout</span></button>
+  </nav>
+
+  <!-- FUNDS MODAL -->
+  <div class="moverlay" id="fmod">
+    <div class="fmodal">
+      <div class="fico">😬</div>
+      <div class="ftitle">Insufficient Funds!</div>
+      <div class="fmsg">Your wallet doesn't have enough ETH to complete this purchase. Please top up and try again.</div>
+      <div class="fdrow"><span class="fdlbl">Your Balance</span><span class="fdval g" id="fmbal">—</span></div>
+      <div class="fdrow"><span class="fdlbl">Order Total</span><span class="fdval r" id="fmreq">—</span></div>
+      <div class="fdrow" style="background:#fff0f0"><span class="fdlbl">Shortfall</span><span class="fdval r" id="fmsho">—</span></div>
+      <button class="dsbtn" onclick="document.getElementById('fmod').classList.remove('on')">Got it, I'll top up</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
