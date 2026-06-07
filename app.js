@@ -751,11 +751,23 @@ async function scanFromFile(input){
   input.value = '';   // allow re-selecting the same file
 }
 
+// Rejection/success cards auto-dismiss after this long so they don't linger
+// once the staff member has clearly seen them.
+let redeemCardTimer = null;
+function autoDismissRedeemCard(){
+  clearTimeout(redeemCardTimer);
+  redeemCardTimer = setTimeout(() => {
+    const msg = document.getElementById('redeemMsg');
+    if (msg) msg.innerHTML = '';
+  }, 3000);
+}
+
 // Big, hard-to-miss rejection card — staff need to notice a bad scan at a glance
 function showRedeemAlert(icon, text){
   const msg = document.getElementById('redeemMsg');
   msg.style.color = '';
   msg.innerHTML = `<div class="redalert"><div class="ra-ic">${icon}</div><div class="ra-tx">${text}</div></div>`;
+  autoDismissRedeemCard();
 }
 
 // Equally hard-to-miss confirmation card for a successful redemption
@@ -763,6 +775,7 @@ function showRedeemSuccess(icon, text){
   const msg = document.getElementById('redeemMsg');
   msg.style.color = '';
   msg.innerHTML = `<div class="grnalert"><div class="ra-ic">${icon}</div><div class="ra-tx">${text}</div></div>`;
+  autoDismissRedeemCard();
 }
 
 // FREE on-chain pre-check shared by the scanner and the manual-ID form →
