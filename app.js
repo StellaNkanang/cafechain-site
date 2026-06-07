@@ -625,6 +625,8 @@ async function redeemTicket() {
     return;
   }
 
+  if (!(await precheckTicket(ticketId))) return;
+
   try {
     msg.style.color = 'var(--muted)';
     msg.textContent = 'Sending transaction…';
@@ -634,8 +636,7 @@ async function redeemTicket() {
 
     await tx.wait();
 
-    msg.style.color = 'var(--success)';
-    msg.textContent = '✓ Ticket #' + ticketId + ' marked as used on-chain!';
+    showRedeemSuccess('✓', 'Ticket #' + ticketId + ' marked as used on-chain!');
 
     // Also mark it as used in local state so QR Wallet updates
     const t = st.tickets.find(t => t.tokenId === String(ticketId));
@@ -757,6 +758,30 @@ function showRedeemAlert(icon, text){
   msg.innerHTML = `<div class="redalert"><div class="ra-ic">${icon}</div><div class="ra-tx">${text}</div></div>`;
 }
 
+// Equally hard-to-miss confirmation card for a successful redemption
+function showRedeemSuccess(icon, text){
+  const msg = document.getElementById('redeemMsg');
+  msg.style.color = '';
+  msg.innerHTML = `<div class="grnalert"><div class="ra-ic">${icon}</div><div class="ra-tx">${text}</div></div>`;
+}
+
+// FREE on-chain pre-check shared by the scanner and the manual-ID form →
+// instant rejection card for spent/expired/missing tickets, no wallet popup.
+// Returns true when the ticket is still redeemable.
+async function precheckTicket(id){
+  try {
+    const t = await contract.getTicket(id);
+    if (t.buyer === '0x0000000000000000000000000000000000000000'){
+      showRedeemAlert('❓', 'Ticket #' + id + ' does not exist'); return false;
+    }
+    const s = Number(t.status);                 // 0 Unused, 1 Used, 2 Expired, 3 Refunded
+    if (t.isUsed || s === 1){ showRedeemAlert('🚫', 'Ticket #' + id + ' — ALREADY USED'); return false; }
+    if (s === 3){ showRedeemAlert('↩️', 'Ticket #' + id + ' — ALREADY REFUNDED'); return false; }
+    if (Number(t.expiresAt) * 1000 < Date.now()){ showRedeemAlert('⏰', 'Ticket #' + id + ' — EXPIRED'); return false; }
+  } catch (e) { /* read failed — let redeemTicket() surface the real error */ }
+  return true;
+}
+
 // Shared handler: decode → check on-chain → redeem
 async function onScanSuccess(decodedText){
   await stopScanner();
@@ -764,17 +789,7 @@ async function onScanSuccess(decodedText){
   const id  = parseTicketPayload(decodedText);
   if (!id){ msg.style.color='var(--red)'; msg.textContent='Unrecognised QR code.'; return; }
 
-  // FREE on-chain pre-check → instant feedback for spent tickets, no wallet popup
-  try {
-    const t = await contract.getTicket(id);
-    if (t.buyer === '0x0000000000000000000000000000000000000000'){
-      showRedeemAlert('❓', 'Ticket #' + id + ' does not exist'); return;
-    }
-    const s = Number(t.status);                 // 0 Unused, 1 Used, 2 Expired, 3 Refunded
-    if (t.isUsed || s === 1){ showRedeemAlert('🚫', 'Ticket #' + id + ' — ALREADY USED'); return; }
-    if (s === 3){ showRedeemAlert('↩️', 'Ticket #' + id + ' — ALREADY REFUNDED'); return; }
-    if (Number(t.expiresAt) * 1000 < Date.now()){ showRedeemAlert('⏰', 'Ticket #' + id + ' — EXPIRED'); return; }
-  } catch (e) { /* read failed — let redeemTicket() surface the real error */ }
+  if (!(await precheckTicket(id))) return;
 
   // Valid → reuse your existing redeem flow (sends the tx, shows the ✓ confirmation)
   document.getElementById('redeemId').value = id;
