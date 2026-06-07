@@ -1,6 +1,39 @@
 // ── Live blockchain config ────────────────────────────────
 const CONTRACT_ADDRESS = "0x19ed56C40EAb3a3a12a36447888Bb0D15bCc8771";
- 
+
+// CafeChain's contract lives on Sepolia testnet — the wallet must be on this
+// chain or every contract read/write returns "0x" (BAD_DATA decode errors).
+const SEPOLIA_CHAIN_ID = '0xaa36a7'; // 11155111
+const SEPOLIA_PARAMS = {
+  chainId: SEPOLIA_CHAIN_ID,
+  chainName: 'Sepolia',
+  nativeCurrency: { name: 'Sepolia ETH', symbol: 'ETH', decimals: 18 },
+  rpcUrls: ['https://ethereum-sepolia-rpc.publicnode.com'],
+  blockExplorerUrls: ['https://sepolia.etherscan.io']
+};
+
+// Make sure MetaMask is on Sepolia before we touch the contract; switch (or add)
+// the network for the user instead of letting them hit a cryptic decode error.
+async function ensureSepoliaNetwork() {
+  const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+  if (chainId.toLowerCase() === SEPOLIA_CHAIN_ID) return;
+  try {
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: SEPOLIA_CHAIN_ID }]
+    });
+  } catch (switchErr) {
+    if (switchErr.code === 4902) {
+      await window.ethereum.request({
+        method: 'wallet_addEthereumChain',
+        params: [SEPOLIA_PARAMS]
+      });
+    } else {
+      throw switchErr;
+    }
+  }
+}
+
 let provider = null;
 let signer   = null;
 let contract  = null;
@@ -104,6 +137,8 @@ async function userLogin() {
     const accounts = await window.ethereum.request({
       method: 'eth_requestAccounts'
     });
+
+    await ensureSepoliaNetwork();
 
     provider = new ethers.BrowserProvider(window.ethereum);
     signer   = await provider.getSigner();
@@ -225,6 +260,7 @@ async function adminLogin() {
       params: [{ eth_accounts: {} }]
     });
     const accounts  = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    await ensureSepoliaNetwork();
     const tempProv   = new ethers.BrowserProvider(window.ethereum);
     const readContract = new ethers.Contract(CONTRACT_ADDRESS, window.CAFECHAIN_ABI, tempProv);
     const ownerAddr  = await readContract.owner();
@@ -854,6 +890,10 @@ async function addMeal(){
 // ── METAMASK ACCOUNT CHANGE LISTENER ──
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof window.ethereum === 'undefined') return;
+
+  // MetaMask's recommended pattern: reload on network switch so a stale
+  // provider/contract pointing at the wrong chain can't cause decode errors.
+  window.ethereum.on('chainChanged', () => window.location.reload());
 
   window.ethereum.on('accountsChanged', async (accounts) => {
     // User disconnected all accounts in MetaMask
