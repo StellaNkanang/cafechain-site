@@ -668,9 +668,18 @@ function parseTicketPayload(text){
   return null;
 }
 
+// Toggle button: starts the camera if it's off, stops it if it's already running.
+// (Calling start() while a stream is already open is what left the camera light
+// stuck on — html5-qrcode throws, the preview gets hidden, but the stream never stops.)
+async function toggleScanner(){
+  if (html5Qr && html5Qr.isScanning){ await stopScanner(); return; }
+  await startScanner();
+}
+
 // Start the live camera scanner
 async function startScanner(){
   const msg = document.getElementById('redeemMsg');
+  if (html5Qr && html5Qr.isScanning) return;   // already running — never call start() twice
   if (!contract){ msg.style.color='var(--red)'; msg.textContent='Connect your admin wallet first.'; return; }
   if (typeof Html5Qrcode === 'undefined'){ msg.style.color='var(--red)'; msg.textContent='Scanner library not loaded — check your connection and reload.'; return; }
 
@@ -696,6 +705,7 @@ async function startScanner(){
   }
   msg.style.color = 'var(--muted)';
   msg.textContent = 'Point the camera at a ticket QR…';
+  setScanBtnState(true);
 }
 
 // Stop the camera
@@ -705,6 +715,22 @@ async function stopScanner(){
   }
   const w = document.getElementById('scanWrap');
   if (w) w.style.display = 'none';
+  setScanBtnState(false);
+}
+
+// Keep the single visible button in sync with the camera so it always reads
+// "Stop Camera" while live — the user shouldn't have to hunt for a stop control.
+function setScanBtnState(scanning){
+  const btn = document.getElementById('scanBtn');
+  if (!btn) return;
+  if (scanning){
+    btn.dataset.origBg = btn.dataset.origBg || btn.style.background;
+    btn.textContent = '✕ Stop Camera';
+    btn.style.background = '#555';
+  } else {
+    btn.textContent = '📷 Scan QR with Camera';
+    btn.style.background = btn.dataset.origBg || '';
+  }
 }
 
 // Decode a QR from an uploaded image (no camera needed)
@@ -724,6 +750,13 @@ async function scanFromFile(input){
   input.value = '';   // allow re-selecting the same file
 }
 
+// Big, hard-to-miss rejection card — staff need to notice a bad scan at a glance
+function showRedeemAlert(icon, text){
+  const msg = document.getElementById('redeemMsg');
+  msg.style.color = '';
+  msg.innerHTML = `<div class="redalert"><div class="ra-ic">${icon}</div><div class="ra-tx">${text}</div></div>`;
+}
+
 // Shared handler: decode → check on-chain → redeem
 async function onScanSuccess(decodedText){
   await stopScanner();
@@ -735,12 +768,12 @@ async function onScanSuccess(decodedText){
   try {
     const t = await contract.getTicket(id);
     if (t.buyer === '0x0000000000000000000000000000000000000000'){
-      msg.style.color='var(--red)'; msg.textContent='Ticket #'+id+' does not exist.'; return;
+      showRedeemAlert('❓', 'Ticket #' + id + ' does not exist'); return;
     }
     const s = Number(t.status);                 // 0 Unused, 1 Used, 2 Expired, 3 Refunded
-    if (t.isUsed || s === 1){ msg.style.color='var(--red)'; msg.textContent='⚠ Ticket #'+id+' — already USED.'; return; }
-    if (s === 3){ msg.style.color='var(--red)'; msg.textContent='⚠ Ticket #'+id+' — already REFUNDED.'; return; }
-    if (Number(t.expiresAt) * 1000 < Date.now()){ msg.style.color='var(--red)'; msg.textContent='⚠ Ticket #'+id+' — EXPIRED.'; return; }
+    if (t.isUsed || s === 1){ showRedeemAlert('🚫', 'Ticket #' + id + ' — ALREADY USED'); return; }
+    if (s === 3){ showRedeemAlert('↩️', 'Ticket #' + id + ' — ALREADY REFUNDED'); return; }
+    if (Number(t.expiresAt) * 1000 < Date.now()){ showRedeemAlert('⏰', 'Ticket #' + id + ' — EXPIRED'); return; }
   } catch (e) { /* read failed — let redeemTicket() surface the real error */ }
 
   // Valid → reuse your existing redeem flow (sends the tx, shows the ✓ confirmation)
