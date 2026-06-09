@@ -45,8 +45,15 @@ let meals = [];
 // COSMETIC ONLY. The chain stores name/price/stock; pictures live here, keyed by on-chain mealId.
 // After you add a meal in the admin panel, note its new id and add an entry here to give it a picture.
 const mealVisuals = {
-  // 5: { emoji:'🍛', desc:'Your description here', img:'images/meal5.jpg' },
-  // 6: { emoji:'🍲', desc:'Another meal',          img:'images/meal6.jpg' },
+ 1: { emoji:'🍛', desc:'Delicious jollof rice with tender chicken and a side of fried plantains.', img:'images/Food Picture/jollof_rice_chicken.png' },
+  5: { emoji:'🍠', desc:'Delicious and juicy Yamarita', img:'images/Food Picture/yamarita.jpg' },
+   6: { emoji:'🍲', desc:'Egusi soup and Semo',          img:'images/Food Picture/fufu_egusi.jpg' },
+  8: { emoji:'🍔', desc:'Creamy and juicy meal', img:'images/Food Picture/pizza_burger.jpg' },
+  9:{ emoji:'🍕', desc:'Creamy and juicy meal', img:'images/Food Picture/pizza_png.png' },
+  10: { emoji:'🍲', desc:'Plantain and egg', img:'images/Food Picture/plantain_and_egg.jpg' },
+  11: { emoji:'🥪', desc:'Sandwich breakfast', img:'images/Food Picture/sandwich.jpg' },
+  12: { emoji:'🌯', desc:'Shawarma with sausage', img:'images/Food Picture/shawarma.jpg' },
+  13: { emoji:'🧇', desc:'Breakfast waffles', img:'images/Food Picture/waffles.jpg' },
 };
 const DEFAULT_IMG = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80';
 

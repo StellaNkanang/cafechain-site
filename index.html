@@ -22,7 +22,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
-  --orange:#D4870A;--yellow:#FFC107;--red:#C1440E;--bg:#F5EFE6;
+  --orange:#D4870A;--yellow:#FFC107;--red:#C1440E;--bg:#EDD9B8;
   --navy:#1B2A4A;--navy2:#243358;
   --text:#1A1A2E;--muted:#8A8A9A;--success:#27AE60;
   --nav-h:72px;
@@ -322,15 +322,16 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
   display:flex;align-items:stretch;height:var(--nav-h);
   padding:0 8px env(safe-area-inset-bottom,8px);z-index:50;
 }
-.nav{background:var(--navy);border-top:1px solid rgba(255,255,255,.08);box-shadow:0 -4px 24px rgba(0,0,0,.2)}
+.nav{background:#C49A6C;border-top:2px solid rgba(139,94,52,0.4);box-shadow:0 -4px 20px rgba(0,0,0,.18)}
 .anav{background:rgba(26,26,46,.97);border-top:1px solid #2a2a4a;display:none}
 .anav.on{display:flex}
 
 .nbtn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:transparent;cursor:pointer;padding:8px 4px;min-width:0;transition:all .15s;border-radius:12px;margin:6px 3px}
-.nbtn:hover{background:rgba(255,255,255,.08)}
+.nbtn:hover{background:rgba(0,0,0,.1)}
 .nico{font-size:22px;line-height:1}
-.nlbl{font-size:10px;font-weight:700;color:rgba(255,255,255,.5);white-space:nowrap}
-.nbtn.on .nlbl{color:var(--yellow)}
+.nlbl{font-size:10px;font-weight:700;color:rgba(27,42,74,.65);white-space:nowrap}
+.nav .nbtn.on .nlbl{color:var(--navy)}
+.nav .nbtn.on{background:rgba(255,255,255,.22)}
 .nbtn.on .nico{transform:scale(1.1)}
 .anav .nlbl{color:rgba(255,255,255,.5)}
 .anav .nbtn.on .nlbl{color:var(--yellow)}
@@ -406,7 +407,8 @@ html, body {
   <!-- LOGIN -->
   <div class="scr on" id="s-login">
     <div class="login-wrap">
-      <div class="login-logo">Cafe<span>Chain</span> ⛓️</div>
+      <div class="login-logo"><img class="logo-img" src="images\cafechain_logo.png" alt="CafeChain"></div>
+      <div class="login-logo">Cafe<span>Chain</span> </div>
       <div class="login-tag">BLOCKCHAIN CAFETERIA TICKETING</div>
       <div class="lcard">
         <!-- Student -->
@@ -460,7 +462,7 @@ html, body {
     <div class="hero-section">
       <div class="hero-carousel" id="heroCarousel">
         <div class="hero-slide" onclick="navTo('home')">
-          <img src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=800&q=80" alt="Jollof Rice">
+          <img src="images/Food Picture/jollof_rice_chicken.png" alt="Jollof Rice">
           <div class="hero-slide-ov slide-navy">
             <div class="slide-tag">TODAY'S SPECIALS</div>
             <div class="slide-name">Jollof Rice<br>& Chicken</div>
@@ -468,7 +470,7 @@ html, body {
           </div>
         </div>
         <div class="hero-slide" onclick="navTo('home')">
-          <img src="https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80" alt="Pepper Soup">
+          <img src="images/Food Picture/pepper_soup_plantain.jpg" alt="Pepper Soup">
           <div class="hero-slide-ov slide-brown">
             <div class="slide-tag">NEW</div>
             <div class="slide-name">Pepper Soup<br>& Plantain</div>
@@ -639,16 +641,16 @@ html, body {
 
   <!-- CUSTOMER NAV -->
   <nav class="nav" id="cnav" style="display:none">
-    <button class="nbtn on" id="n-home" onclick="navTo('home')"><span class="nico">🏠</span><span class="nlbl">Home</span></button>
-    <button class="nbtn" id="n-history" onclick="navTo('history')"><span class="nico">🧾</span><span class="nlbl">History</span></button>
-    <button class="nbtn" id="n-qrw" onclick="navTo('qrw')"><span class="nico">📲</span><span class="nlbl">QR Wallet</span></button>
-    <button class="nbtn" onclick="userOut()"><span class="nico">🚪</span><span class="nlbl">Logout</span></button>
+    <button class="nbtn on" id="n-home" onclick="navTo('home')"><span class="nico"><img class="nico-img" src="images\home_icon.png" alt=""></span><span class="nlbl">Home</span></button>
+    <button class="nbtn" id="n-history" onclick="navTo('history')"><span class="nico"><img class="nico-img" src="images\ticket_icon.png" alt=""></span><span class="nlbl">History</span></button>
+    <button class="nbtn" id="n-qrw" onclick="navTo('qrw')"><span class="nico"><img class="nico-img" src="images\qr_code_icon.png" alt=""></span><span class="nlbl">QR Wallet</span></button>
+    <button class="nbtn" onclick="userOut()"><span class="nico"><img class="nico-img" src="images\logout-Icon.png" alt=""></span><span class="nlbl">Logout</span></button>
   </nav>
 
   <!-- ADMIN NAV -->
   <nav class="anav" id="anav">
-    <button class="nbtn on"><span class="nico">📊</span><span class="nlbl" style="color:var(--orange)">Dashboard</span></button>
-    <button class="nbtn" onclick="adminOut()"><span class="nico">🚪</span><span class="nlbl">Logout</span></button>
+    <button class="nbtn on"><span class="nico"><img class="nico-img" src="images\admin_icon.png" alt=""></span><span class="nlbl" style="color:var(--orange)">Dashboard</span></button>
+    <button class="nbtn" onclick="adminOut()"><span class="nico"><img class="nico-img" src="images\logout-Icon.png" alt=""></span><span class="nlbl">Logout</span></button>
   </nav>
 
   <!-- FUNDS MODAL -->
