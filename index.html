@@ -22,7 +22,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
-  --orange:#D4870A;--yellow:#FFC107;--red:#C1440E;--bg:#EDD9B8;
+  --orange:#D4870A;--yellow:#FFC107;--red:#C1440E;--bg:#FAF6EF;
   --navy:#1B2A4A;--navy2:#243358;
   --text:#1A1A2E;--muted:#8A8A9A;--success:#27AE60;
   --nav-h:72px;
@@ -322,7 +322,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
   display:flex;align-items:stretch;height:var(--nav-h);
   padding:0 8px env(safe-area-inset-bottom,8px);z-index:50;
 }
-.nav{background:#C49A6C;border-top:2px solid rgba(139,94,52,0.4);box-shadow:0 -4px 20px rgba(0,0,0,.18)}
+.nav{background:var(--navy);border-top:2px solid rgba(255,255,255,0.08);box-shadow:0 -4px 20px rgba(0,0,0,.18)}
 .anav{background:rgba(26,26,46,.97);border-top:1px solid #2a2a4a;display:none}
 .anav.on{display:flex}
 
@@ -330,8 +330,9 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);disp
 .nbtn:hover{background:rgba(0,0,0,.1)}
 .nico{font-size:22px;line-height:1}
 .nlbl{font-size:10px;font-weight:700;color:rgba(27,42,74,.65);white-space:nowrap}
-.nav .nbtn.on .nlbl{color:var(--navy)}
-.nav .nbtn.on{background:rgba(255,255,255,.22)}
+.nav .nlbl{color:rgba(255,255,255,.6)}
+.nav .nbtn.on .nlbl{color:#fff}
+.nav .nbtn.on{background:rgba(255,255,255,.14)}
 .nbtn.on .nico{transform:scale(1.1)}
 .anav .nlbl{color:rgba(255,255,255,.5)}
 .anav .nbtn.on .nlbl{color:var(--yellow)}
